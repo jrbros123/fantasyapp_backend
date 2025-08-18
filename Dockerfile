@@ -1,13 +1,19 @@
-# Step 1: Build the jar
-FROM maven:3.9.3-eclipse-temurin-17 AS build
+# Step 1: Build the JAR
+FROM maven:3.9.2-eclipse-temurin-22 AS build
 WORKDIR /app
+
+# Copy pom.xml first to leverage Docker cache
 COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code and build
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Step 2: Run the jar
-FROM eclipse-temurin:17-jdk
+# Step 2: Run the JAR
+FROM eclipse-temurin:22-jdk
 WORKDIR /app
-COPY --from=build /app/target/fantasy_nba-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]
