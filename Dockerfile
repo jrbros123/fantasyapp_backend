@@ -1,22 +1,23 @@
-# Step 1: Build the JAR
-FROM maven:3.9.3-jdk-22 AS build
-WORKDIR /app
-
-# Copy only pom.xml first to cache dependencies
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source code and build
-COPY src ./src
-RUN mvn clean package -DskipTests
-
-# Step 2: Run the JAR
+# Use Eclipse Temurin JDK 22
 FROM eclipse-temurin:22-jdk
-WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
 
-# Expose the port your Spring Boot app uses
+# Set working directory
+WORKDIR /app
+
+# Copy Maven wrapper and pom.xml
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# Make mvnw executable
+RUN chmod +x mvnw
+
+# Download dependencies and build jar
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# Expose port your Spring Boot app uses
 EXPOSE 8080
 
-# Start the Spring Boot app
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the JAR
+CMD ["java", "-jar", "target/fantasy_nba-0.0.1-SNAPSHOT.jar"]
